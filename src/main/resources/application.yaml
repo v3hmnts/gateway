@@ -1,3 +1,30 @@
+server:
+  port: 8091
 spring:
   application:
     name: gateway
+  cloud:
+    gateway:
+      routes:
+        - id: userService
+          uri: http://localhost:8080
+          predicates:
+            - Path=/users/**
+          filters:
+            - name: RewritePath
+              args:
+                regexp: /users/(?<segment>.*)
+                replacement: /api/v1/users/$\{segment}
+        - id: payment_card_service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/cards/**
+          filters:
+            - name: RewritePath
+              args:
+                regexp: /cards/(?<segment>.*)
+                replacement: /api/v1/payment-cards/$\{segment}
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    gateway.filter: INFO
