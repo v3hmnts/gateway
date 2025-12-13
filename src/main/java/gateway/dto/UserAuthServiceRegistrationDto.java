@@ -5,8 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record UserAuthServiceRegistrationDto (
-
+public record UserAuthServiceRegistrationDto(
         @NotNull
         Long id,
 
@@ -21,5 +20,5 @@ public record UserAuthServiceRegistrationDto (
         @NotBlank(message = "Email is required")
         @Email(message = "Email should be valid")
         String email
-){
+) {
 }

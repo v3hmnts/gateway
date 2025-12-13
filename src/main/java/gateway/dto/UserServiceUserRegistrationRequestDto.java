@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.sql.Date;
 
-public record UserUserServiceRegistrationDto (
+public record UserServiceUserRegistrationRequestDto(
         @NotBlank(message = "Name shouldn't be empty")
         @Size(min = 3, max = 100, message = "Name length should be between 3 and 100 characters")
         String name,
@@ -22,5 +22,5 @@ public record UserUserServiceRegistrationDto (
         @NotBlank(message = "Email is required")
         @Email(message = "Email should be valid")
         String email
-){
+) {
 }
