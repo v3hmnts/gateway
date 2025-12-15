@@ -1,0 +1,163 @@
+services:
+
+  user-service-db:
+    image: postgres:18
+    environment:
+      - POSTGRES_DB=${USER_POSTGRES_DB}
+      - POSTGRES_USER=${USER_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${USER_POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
+    ports:
+      - "5433:5432"
+    networks:
+      - user-service-network
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${USER_POSTGRES_USER} -d ${USER_POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: redis-server
+    networks:
+      - user-service-network
+
+
+  user-service:
+    image: docker.io/user-service/user-service:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - DATABASE_URL=jdbc:postgresql://user-service-db:5432/${USER_POSTGRES_DB}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${USER_POSTGRES_DB}
+      - POSTGRES_USER=${USER_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${USER_POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+    networks:
+      - user-service-network
+      - gateway-service-network
+    depends_on:
+      user-service-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+
+  auth-db:
+    image: postgres:18
+    environment:
+      - POSTGRES_DB=${AUTH_POSTGRES_DB}
+      - POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
+    ports:
+      - "5432:5432"
+    networks:
+      - auth-service-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  auth-service:
+    image: docker.io/auth-service/auth-service:latest
+    environment:
+      - POSTGRES_DB=${AUTH_POSTGRES_DB}
+      - POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - DB_URL=jdbc:postgresql://auth-db:5432/${AUTH_POSTGRES_DB}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "9090:9090"
+    networks:
+      - gateway-service-network
+      - auth-service-network
+      - user-service-network
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+
+  order-db:
+    image: postgres:18
+    environment:
+      - POSTGRES_DB=${ORDER_POSTGRES_DB}
+      - POSTGRES_USER=${ORDER_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${ORDER_POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8
+    ports:
+      - "5434:5432"
+    networks:
+      - order-service-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${ORDER_POSTGRES_USER} -d ${ORDER_POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  order-service:
+    image: docker.io/order-service/order-service:latest
+    environment:
+      - POSTGRES_DB=${ORDER_POSTGRES_DB}
+      - POSTGRES_USER=${ORDER_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${ORDER_POSTGRES_PASSWORD}
+      - DB_URL=jdbc:postgresql://order-db:5432/${ORDER_POSTGRES_DB}
+      - USER_SERVICE_URI=http://user-service:8080
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8090:8090"
+    networks:
+      - gateway-service-network
+      - order-service-network
+      - user-service-network
+    depends_on:
+      order-db:
+        condition: service_healthy
+
+  gateway-service:
+    image: docker.io/gateway-service/gateway:latest
+    environment:
+      - USER_SERVICE_BASE_URL=http://user-service:8080
+      - AUTH_SERVICE_BASE_URL=http://auth-service:9090 
+      - ORDER_SERVICE_BASE_URL=http://order-service:8090
+      - SPRING_PROFILES_ACTIVE=docker
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+    ports:
+      - "8091:8091"
+    networks:
+      - order-service-network
+      - user-service-network
+      - auth-service-network
+      - gateway-service-network
+    depends_on:
+      order-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+ 
+networks:
+  order-service-network:
+    driver: bridge
+  user-service-network:
+    driver: bridge
+  auth-service-network:
+    driver: bridge
+  gateway-service-network:
+    driver: bridge
