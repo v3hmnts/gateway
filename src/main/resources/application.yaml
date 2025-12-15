@@ -46,3 +46,6 @@ auth:
     excludedPaths:
       - /auth/register
       - /auth/token
+      - /auth/refresh
+jwt:
+  public-key: ${JWT_PUBLIC_KEY:}
