@@ -38,7 +38,11 @@ spring:
             - PrefixPath=/api/v1
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
     gateway.filter: INFO
 
-
+auth:
+  filter:
+    excludedPaths:
+      - /auth/register
+      - /auth/token
