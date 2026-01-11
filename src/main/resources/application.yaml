@@ -15,7 +15,7 @@ spring:
         - id: payment_card_service
           uri: ${USER_SERVICE_BASE_URL:http://localhost:8080}
           predicates:
-            - Path=/cards/**
+            - Path=/payment-cards/**
           filters:
             - PrefixPath=/api/v1
         - id: auth_service
