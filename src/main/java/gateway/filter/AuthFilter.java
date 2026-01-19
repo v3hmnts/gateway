@@ -46,10 +46,12 @@ public class AuthFilter implements GlobalFilter {
         }
         List<String> authHeaderValue = exchange.getRequest().getHeaders().get(AUTH_HEADER);
         if (authHeaderValue == null || authHeaderValue.isEmpty()) {
+            logger.error("Missing or invalid authorization token");
             return generateMonoErrorResponse(exchange,"Missing or invalid authorization token");
         }
         String jwt = extractJwtFromRequest(authHeaderValue.getFirst());
         if(jwt == null || !jwtUtil.validateToken(jwt)){
+            logger.error("Token is not valid");
             return generateMonoErrorResponse(exchange,"Token is not valid");
         }
         return chain.filter(exchange);
