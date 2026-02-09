@@ -36,6 +36,12 @@ spring:
             - Path=/items/**
           filters:
             - PrefixPath=/api/v1
+        - id: payment_service
+          uri: ${PAYMENT_SERVICE_BASE_URL:http://localhost:8092}
+          predicates:
+            - Path=/payments/**
+          filters:
+            - PrefixPath=/api/v1
 logging:
   level:
     org.springframework.cloud.gateway: INFO
