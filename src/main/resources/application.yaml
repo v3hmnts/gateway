@@ -1,3 +1,57 @@
+server:
+  port: 8091
 spring:
   application:
     name: gateway
+  cloud:
+    gateway:
+      routes:
+        - id: userService
+          uri: ${USER_SERVICE_BASE_URL:http://localhost:8080}
+          predicates:
+            - Path=/users/**
+          filters:
+            - PrefixPath=/api/v1
+        - id: payment_card_service
+          uri: ${USER_SERVICE_BASE_URL:http://localhost:8080}
+          predicates:
+            - Path=/cards/**
+          filters:
+            - PrefixPath=/api/v1
+        - id: auth_service
+          uri: ${AUTH_SERVICE_BASE_URL:http://localhost:9090}
+          predicates:
+            - Path=/auth/**
+          filters:
+            - PrefixPath=/api/v1
+        - id: order_service
+          uri: ${ORDER_SERVICE_BASE_URL:http://localhost:8090}
+          predicates:
+            - Path=/orders/**
+          filters:
+            - PrefixPath=/api/v1
+        - id: item_service
+          uri: ${ORDER_SERVICE_BASE_URL:http://localhost:8090}
+          predicates:
+            - Path=/items/**
+          filters:
+            - PrefixPath=/api/v1
+        - id: payment_service
+          uri: ${PAYMENT_SERVICE_BASE_URL:http://localhost:8092}
+          predicates:
+            - Path=/payments/**
+          filters:
+            - PrefixPath=/api/v1
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    gateway.filter: INFO
+
+auth:
+  filter:
+    excludedPaths:
+      - /auth/register
+      - /auth/token
+      - /auth/refresh
+jwt:
+  public-key: ${JWT_PUBLIC_KEY:}
