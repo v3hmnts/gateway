@@ -15,7 +15,7 @@ spring:
         - id: payment_card_service
           uri: ${USER_SERVICE_BASE_URL:http://localhost:8080}
           predicates:
-            - Path=/cards/**
+            - Path=/payment-cards/**
           filters:
             - PrefixPath=/api/v1
         - id: auth_service
@@ -42,10 +42,6 @@ spring:
             - Path=/payments/**
           filters:
             - PrefixPath=/api/v1
-logging:
-  level:
-    org.springframework.cloud.gateway: INFO
-    gateway.filter: INFO
 
 auth:
   filter:
@@ -55,3 +51,48 @@ auth:
       - /auth/refresh
 jwt:
   public-key: ${JWT_PUBLIC_KEY:}
+# Prometheus metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# OpenTelemetry tracing
+otel:
+  traces:
+    exporter: otlp
+  service:
+    name: ${spring.application.name}
+  instrumentation:
+    micrometer:
+      enabled: true
+  exporter:
+    otlp:
+      endpoint: http://${OTEL_EXPORTER_OTLP_ENDPOINT:localhost:4317}
+      protocol: grpc
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
+# Application logs
+logging:
+  level:
+    ROOT: INFO
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  loki:
+    url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+    headers:
+      X-Scope-OrgID: inno
